@@ -8,6 +8,7 @@ using Seaware.GribCS.Grib1;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using Seaware.GribCS;
 
 namespace MWCommunicationApp
 {
@@ -15,13 +16,21 @@ namespace MWCommunicationApp
     {
         static string strPath = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.FullName; 
         //Just Rename with name
-        private static System.IO.FileStream RandomAccessFile = new System.IO.FileStream(strPath + "/GribFiles/newone.grib2", System.IO.FileMode.Open);
+        private static System.IO.FileStream RandomAccessFile = new System.IO.FileStream(strPath + "/GribFiles/full.grb", System.IO.FileMode.Open);
         static void Main(string[] args)
+        {
+
+            GribOne();
+
+            Console.ReadLine();
+        }
+        
+        static void GribTwo()
         {
             #region Grib 2 Code
 
             Grib2Input input = new Grib2Input(RandomAccessFile);
-           
+
             if (!input.scan(false, false))
             {
                 Console.WriteLine("Failed to successfully scan grib file");
@@ -42,7 +51,7 @@ namespace MWCommunicationApp
 
                 Console.WriteLine("Record description at " + " forecast " + new DateTime(time) + ": " + string.Format("{0} {1} {2}", iis.Discipline, pdsv.ParameterCategory, pdsv.ParameterNumber));
 
-               
+
 
                 float[] values = data.getData(record.getGdsOffset(), record.getPdsOffset());
 
@@ -81,7 +90,7 @@ namespace MWCommunicationApp
                     {
                         for (double lon = gdsv.Lo1; lon <= gdsv.Lo2; lon = lon + gdsv.Dx)
                         {
-                            Console.WriteLine("RH "+lat + "\t" + lon + "\t" + values[c]);
+                            Console.WriteLine("RH " + lat + "\t" + lon + "\t" + values[c]);
                             c++;
                         }
                     }
@@ -89,9 +98,7 @@ namespace MWCommunicationApp
             }
 
             #endregion
-            Console.ReadLine();
         }
-        
         static void GribOne()
         {
             #region Grib 1 Code
@@ -107,71 +114,52 @@ namespace MWCommunicationApp
             Grib1Data data = new Grib1Data(RandomAccessFile);
             var records1 = gi.Records;
 
-            //foreach (Grib1Record record in records1)
-            //{
-            //    IGrib1IndicatorSection iis = record.Is;
-            //    //IGrib1IdentificationSection id = record.ID;
-            //    IGrib1ProductDefinitionSection pdsv = record.PDS;
-            //    IGrib1GridDefinitionSection gdsv = record.GDS;
-
-            //    // long time = id.RefTime.AddTicks(record.PDS.ForecastTime * 3600000).Ticks;
-
-            //    // Console.WriteLine("Record description at " + " forecast " + new DateTime(time) + ": " + string.Format("{0} {1} {2}", iis.Discipline, pdsv.ParameterCategory, pdsv.ParameterNumber));
-
-            //    float[] values = data.getData(record.DataOffset, record.PDS.DecimalScale, record.PDS.bmsExists());
-
-            //    if ((iis.Length > 0) && (pdsv.ParameterNumber == 2))
-            //    {
-            //        // U-component_of_wind
-            //        int c = 0;
-            //        for (double lat = gdsv.La1; lat >= gdsv.La2; lat = lat - gdsv.Dy)
-            //        {
-            //            for (double lon = gdsv.Lo1; lon <= gdsv.Lo2; lon = lon + gdsv.Dx)
-            //            {
-            //                Console.WriteLine(lat + "\t" + lon + "\t" + values[c]);
-            //                c++;
-            //            }
-            //        }
-            //    }
-            //    else if ((iis.Length > 0) && (pdsv.ParameterNumber == 3))
-            //    {
-            //        // V-component_of_wind
-            //        int c = 0;
-            //        for (double lat = gdsv.La1; lat >= gdsv.La2; lat = lat - gdsv.Dy)
-            //        {
-            //            for (double lon = gdsv.Lo1; lon <= gdsv.Lo2; lon = lon + gdsv.Dx)
-            //            {
-            //                Console.WriteLine(lat + "\t" + lon + "\t" + values[c]);
-            //                c++;
-            //            }
-            //        }
-            //    }
-            //}
-
-            for (int i = 0; i < gi.Records.Count; i++)
+            foreach (Grib1Record record in records1)
             {
-                Grib1Record rec = (Grib1Record)gi.Records[i];
-                Grib1Data gd = new Grib1Data(RandomAccessFile);
-                float[] data1 = gd.getData(rec.DataOffset,
-                                            rec.PDS.DecimalScale, rec.PDS.bmsExists());
-                System.Console.WriteLine("Param=" + rec.PDS.ParameterNumber);
-                System.Console.WriteLine("Time=" + rec.PDS.ForecastTime);
-                for (int j = 0; j < data1.Length; j++)
+                IGrib1IndicatorSection iis = record.Is;
+                IGrib1ProductDefinitionSection pdsv = record.PDS;
+                IGrib1GridDefinitionSection gdsv = record.GDS;
+
+                float[] values = data.getData(record.DataOffset, record.PDS.DecimalScale, record.PDS.bmsExists());
+                if ((iis.GribEdition == 1) && (pdsv.ParameterNumber == 2))
                 {
-                    System.Console.WriteLine(data1[j]);
-                }
-                float dataMin = float.MaxValue;
-                float dataMax = -float.MaxValue;
-                for (int j = 0; j < data1.Length; j++)
-                {
-                    if (data1[j] > -9998.0)
+                    // U-component_of_wind
+                    int c = 0;
+                    for (double lat = gdsv.La1; lat >= gdsv.La2; lat = lat - gdsv.Dy)
                     {
-                        dataMin = Math.Min(dataMin, data1[j]);
-                        dataMax = Math.Max(dataMax, data1[j]);
+                        for (double lon = gdsv.Lo1; lon <= gdsv.Lo2; lon = lon + gdsv.Dx)
+                        {
+                            Console.WriteLine("U-Wind : " + lat + "\t" + lon + "\t" + values[c]);
+                            c++;
+                        }
                     }
                 }
-
-                string gridName = Grib1GridDefinitionSection.getName(rec.GDS.Gdtn);
+                else if ((iis.GribEdition == 1) && (pdsv.ParameterNumber == 2))
+                {
+                    // V-component_of_wind
+                    int c = 0;
+                    for (double lat = gdsv.La1; lat >= gdsv.La2; lat = lat - gdsv.Dy)
+                    {
+                        for (double lon = gdsv.Lo1; lon <= gdsv.Lo2; lon = lon + gdsv.Dx)
+                        {
+                            Console.WriteLine("V-Wind : " + lat + "\t" + lon + "\t" + values[c]);
+                            c++;
+                        }
+                    }
+                }
+                else if ((iis.GribEdition == 1) && (pdsv.ParameterNumber == 71))
+                {
+                    // Cloud
+                    int c = 0;
+                    for (double lat = gdsv.La1; lat >= gdsv.La2; lat = lat - gdsv.Dy)
+                    {
+                        for (double lon = gdsv.Lo1; lon <= gdsv.Lo2; lon = lon + gdsv.Dx)
+                        {
+                            Console.WriteLine("Cluod : "+lat + "\t" + lon);
+                            c++;
+                        }
+                    }
+                }
             }
             #endregion
         }

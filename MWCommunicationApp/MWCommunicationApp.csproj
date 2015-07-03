@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="GribFiles\full.grb" />
     <None Include="GribFiles\full.grib2" />
     <None Include="GribFiles\newone.grib2" />
   </ItemGroup>
